@@ -48,16 +48,17 @@ cabal-version:       >=1.10
 
 library
   -- Modules exported by the library.
-  -- exposed-modules:     
+  exposed-modules: Haskgine2d.World.Type, Haskgine2d.World.Trans, Haskgine2d.World.Object, Haskgine2d.Render.Object, Haskgine2d.Render.Camera
   
   -- Modules included in this library but not exported.
-  -- other-modules:       
+  other-modules: 
   
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:    
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.9 && <4.10
+  build-depends:       base >=4.9 && <4.10, transformers >= 0.4.2.0, OpenGL >= 3.0.1.0, GLFW-b >= 1.4.8.1
+
   
   -- Directories containing source files.
   hs-source-dirs:      src
