@@ -11,7 +11,7 @@ import qualified Data.Map as Map
 
 type Time = Word64
 
-data WorldData a = WorldData {
+data World a = World {
   innnerData :: a,
   objects  :: Map ObjectID World.Object,
   camera   :: Camera,
@@ -23,18 +23,18 @@ data WorldData a = WorldData {
                     
   }
 
+type SimpleWorld = World ()
 
 
-
-genObjectID :: World -> (ObjectID, World)
+genObjectID :: World a -> (ObjectID, World a)
 genObjectID world = (newID,  world{ objectIDSource = newID + 1})
    where
      newID = objectIDSource world
 
-updateTime :: Time -> World -> World
+updateTime :: Time -> World a -> World a
 updateTime newTime world = world{ time = newTime, deltaTime = newTime -  time world}
 
-addObject :: (ObjectID -> Object) -> World -> World 
-addObject objBuilder world = world2{ objects = objBuilder world : objects world}
+addObject :: (ObjectID -> Object) -> World a -> World a
+addObject objBuilder world = world2{ objects = Map.insert objID (objBuilder objID)  objects world}
   where
-    (objID, world2) = genObjectID world 
+    (objID, world2) = genObjectID world

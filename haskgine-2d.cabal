@@ -57,7 +57,7 @@ library
   -- other-extensions:    
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.9 && <4.10, transformers >= 0.4.2.0, OpenGL >= 3.0.1.0, GLFW-b >= 1.4.8.1
+  build-depends:       base >=4.9 && <4.10, transformers >= 0.4.2.0, OpenGL >= 3.0.1.0, GLFW-b >= 1.4.8.1, containers >= 0.5.7.1
 
   
   -- Directories containing source files.
