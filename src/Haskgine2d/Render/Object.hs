@@ -1,29 +1,27 @@
 module Haskgine2d.Render.Object where
 
 
+import  Graphics.Rendering.OpenGL (Vector2(..), Color4(..))
 import qualified Graphics.Rendering.OpenGL as GL
 
+import Haskgine2d.Render.Shaders (GLProgram(..))
 
 
-{-|
-An object in the sense of rendering is simple the set of data needed to render it.
+type Position = Vector2 Float
+type Color = Color4 Float
+
+{- |
+The object that is used for rendering 
 -}
 data Object = Object {
-  glProgram :: GL.Program,
+  glProgram :: GLProgram,
+
+  position  :: Position,
+  rotation  :: Float,
+  baseColor :: Color,
   
-  timeUniform :: GL.UniformLocation,
-  cameraXUniform :: GL.UniformLocation,
-  cameraYUniform :: GL.UniformLocation,
-  cameraViewWidthUniform :: GL.UniformLocation,
-  cameraViewHeightUniform :: GL.UniformLocation,
-
-  objectPositionXUniform :: GL.UniformLocation,
-  objectPositionYUniform :: GL.UniformLocation,
-                                              
-  vbo :: GL.VertexArrayObject,
-  vao :: GL.BufferObject,
-  ibo :: GL.BufferObject
-                             
+  vbo       :: GL.VertexArrayObject,
+  vao       :: GL.BufferObject,
+  ibo       :: GL.BufferObject
   }
-
-   
+              

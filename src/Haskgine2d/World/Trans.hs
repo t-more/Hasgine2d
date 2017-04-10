@@ -1,28 +1,31 @@
 module Haskgine2d.World.Trans where
 
+
+import Control.Monad.Trans.State (StateT(..), get, put)
+
+import Haskgine2d.World.Type (World, Time)
 import qualified Haskgine2d.World.Type as World
 
-type WorldT internal result = StateT (WorldData internal) IO result
+import Haskgine2d.World.Object
 
+type WorldT inner result = StateT (World inner) IO result
+type SimpleWorldT result = WorldT () result
 
-getTime :: WorldT Time 
-getTime = get <$> time
+getTime :: WorldT a Time 
+getTime = World.time <$> get
 
-getDeltaTime :: WorldT Time
-getDeltaTime get <$> deltaTime
+getDeltaTime :: WorldT a Time
+getDeltaTime =  World.deltaTime <$> get
 
-genObjectID :: WorldT ObjectID
+genObjectID :: WorldT a ObjectID
 genObjectID = do
   world <- get 
-  (objID, newWorld) <- World.genObjectID world
+  let (objID, newWorld) = World.genObjectID world
   put newWorld
-  return objectID 
+  return objID
 
-updateTime :: Time -> WorldT ()
-updateTime newTime = do
-  world <- get
-  prevTime <- time world
-  put world{ time = newTime, deltaTime = newTime - oldTime}
-
-addObject :: (ObjectID -> Object) -> WorldT ()
-addObject objBuilder = put <*> (get <$> addObject objBuilder) 
+updateTime :: Time -> WorldT a ()
+updateTime newTime = World.updateTime newTime <$> get >>= put
+  
+addObject :: (ObjectID -> Object) -> WorldT a ()
+addObject objBuilder = World.addObject objBuilder <$> get >>= put
