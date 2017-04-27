@@ -1,4 +1,18 @@
-module Haskgine2d.Render.Shaders (ShaderData(..), ProgramPool(..), ProgramShaders(..), GLProgram(..), loadShaders, makeProgramPool) where
+module Haskgine2d.Render.Shaders ( ProgramTemplate
+                                 , ShaderData(..)
+                                 , ProgramPool
+                                 , ProgramShaders
+                                 , GLProgram
+                                 , setTime
+                                 , setCameraPosition
+                                 , setCameraRotation
+                                 , setCameraViewMatrics
+                                 , setObjectPositon
+                                 , setObjectRotation
+                                 , setObjectBaseColor
+                                 , glProgram
+                                 , loadShaders
+                                 , makeProgramPool) where
 {- |
 Author: Tomas Möre
 TODO this is currently really unsafe. Make it better 
@@ -7,14 +21,13 @@ import qualified System.FilePath as FP
 import qualified Graphics.Rendering.OpenGL as GL
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromJust)
 import Control.Monad
 
 import qualified Data.ByteString as BS
 import Data.StateVar (($=!), get) 
  
 import Data.Monoid
-import Data.Maybe
 
 data ShaderData a = ShaderData {
   vertex   :: a,
@@ -30,9 +43,9 @@ instance Monoid m => Monoid (ShaderData m) where
 type ShaderPool = ShaderData (Map String GL.Shader)
 
 
-    
+     
 type ProgramPool = Map String GLProgram
- 
+  
 type ProgramTemplatePool = Map String ProgramTemplate
 type ProgramTemplate = ShaderData String
 type ProgramShaders = ShaderData GL.Shader
@@ -44,16 +57,39 @@ The unforms are currently named the same things as the fields in this record.
 -}
 data GLProgram = GLProgram {
   glProgram               :: GL.Program,
-  
   time                    :: GL.UniformLocation, -- Float
   cameraPosition          :: GL.UniformLocation, -- Vec2 Float
+  cameraRotation          :: GL.UniformLocation, -- Float
   cameraViewMatrics       :: GL.UniformLocation, -- Vec2 Float
-  objectPositon           :: GL.UniformLocation, -- Vec2 Float
+  objectPosition           :: GL.UniformLocation, -- Vec2 Float
   objectRotation          :: GL.UniformLocation, -- Float
   objectBaseColor         :: GL.UniformLocation -- Color4 Float
-  }
-emptyProgram = GLProgram                 
- 
+  }             
+
+setUniform ::  (GL.Uniform v) => (GLProgram -> GL.UniformLocation) -> GLProgram -> v -> IO ()
+setUniform attr object value = GL.uniform (attr object) $=! value
+
+setTime :: GLProgram -> Float -> IO ()
+setTime = setUniform time
+
+setCameraPosition :: GLProgram -> GL.Vector2 Float -> IO ()
+setCameraPosition = setUniform cameraPosition
+
+setCameraRotation :: GLProgram -> Float -> IO ()
+setCameraRotation = setUniform cameraRotation
+
+setCameraViewMatrics :: GLProgram -> GL.Vector2 Float -> IO ()
+setCameraViewMatrics = setUniform cameraViewMatrics
+
+setObjectPositon :: GLProgram -> GL.Vector2 Float -> IO ()
+setObjectPositon = setUniform objectPosition
+
+setObjectRotation :: GLProgram -> Float -> IO ()
+setObjectRotation = setUniform objectRotation
+
+setObjectBaseColor :: GLProgram -> GL.Color4 Float -> IO ()
+setObjectBaseColor = setUniform objectBaseColor
+                 
 {- |
 Takes a list of filepaths to shaders and converts them into a shaderpool if possible
 Expects the filenanmes of each shader to be unique.
@@ -68,13 +104,13 @@ loadShaders (shaderFP:rest)  = do
   compileOK <- GL.compileStatus shader
   unless compileOK $ do
     errorStr <- GL.shaderInfoLog shader
-    error ("Couldn't compile shader " <> shaderFP <>  " shader: \n Errors: \n" <> errorStr)
+    error ("Couldn't compile shader \"" <> shaderFP <>  "\" shader: Errors: \n" <> errorStr)
   mappend (singletonPool shader) <$> loadShaders rest
   where
     name = FP.takeBaseName shaderFP 
     shaderType = case FP.takeExtension shaderFP of
-      "frag" -> GL.FragmentShader
-      "vert" -> GL.VertexShader
+      ".frag" -> GL.FragmentShader
+      ".vert" -> GL.VertexShader
       _ -> error $ "File must end with a valid file ending: " <> shaderFP
     singletonPool shader = case shaderType of
       GL.FragmentShader -> mempty{ fragment = Map.singleton name shader}
@@ -108,6 +144,7 @@ bindProgramData :: GL.Program -> IO GLProgram
 bindProgramData program = GLProgram <$> pure program
                                     <*> getUniform "time"
                                     <*> getUniform "cameraPosition"
+                                    <*> getUniform "cameraRotation"
                                     <*> getUniform "cameraViewMatrics"
                                     <*> getUniform "objectPosition"
                                     <*> getUniform "objectRotation"

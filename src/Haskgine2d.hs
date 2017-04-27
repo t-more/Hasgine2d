@@ -12,7 +12,7 @@ import qualified Data.Set as Set
 import qualified Graphics.Rendering.OpenGL as GL
 
 
-
+ 
 data ObjectTemplate = ObjectTemplate {
   name           :: String,
   fragmentShader :: FilePath,
