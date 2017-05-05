@@ -1,0 +1,46 @@
+{-# QuasiQuotes #-}
+module Haskgine2d.Render (  
+  , module Haskgine2d.Render.Context
+  , createStandardContext
+  , ShaderData(..)
+  , GL.Vector2(..)
+  , GL.Vector3(..)
+  , GL.Color4(..)
+ 
+  ) where
+
+import Haskgine2d.Render.Shapes
+import Haskgine2d.Render.Object
+import Haskgine2d.Render.Context as Export
+import Haskgine2d.Render.DefaultShaders
+import Haskgine2d.Render.Shaders  as Export
+
+import qualified Graphics.Rendering.OpenGL as GL
+import qualified Data.Map as Map
+import Data.Maybe 
+import Data.String
+
+import Data.Monoid
+
+defaultProgramName :: IsString a =>  a
+defaultProgramName = fromString "Default"
+{-| An optoion for a default rendering context. This requires some
+compilation of the shaders found in the "DefaultShaders" module This
+default program should be able to take care of most standard ways of
+drawing.
+-}
+
+createStandardContext :: IO Context
+createStandardContext = do
+  eitherShaderPool <- compileShaderSources defaultShaderSources
+  case eitherShaderPool of
+    Left errors -> do
+      error $"This should never have happend. Plz don't hate me! :3\n \
+             \ ###Shader Errors###\n \
+             \ Vertex:\n" <> show (vertex errors) <> "\nFragment:\n" <> show (fragment errors)  
+    Right shaderPool -> do
+      programPool <- makeProgramPool [(defaultProgramName, ShaderData defaultProgramName defaultProgramName)] shaderPool
+      let defaultProgram = fromJust $ Map.lookup defaultProgramName programPool
+          basicContext = createContext defaultProgram
+      return $ addProgramPool basicContext programPool
+   
