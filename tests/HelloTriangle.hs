@@ -2,21 +2,46 @@ module Main where
 
 import Haskgine2d 
 import Haskgine2d.Render.Shaders
+import Haskgine2d.Render.Shapes as Shapes
+import Haskgine2d.Render.Object
+import Haskgine2d.Render.Context 
+
 import Graphics.UI.GLFW as GLFW
-import Graphics.Rendering.OpenGL as GL
+import qualified Graphics.Rendering.OpenGL as GL
 import Data.Maybe
 import Control.Monad
+import qualified Data.Map as Map
+
+import Data.StateVar
 
 main :: IO ()
 main = do
-  window <- fromMaybe <$> initGLFW (1920,1080)
+  window <- fromJust <$> initGLFW (1920,1080)
   
   shaderPool <- loadShaders $  ["shaders/HelloTriangle.frag", "shaders/HelloTriangle.vert"]
-  programPool <- makeProgramPool [("HelloTriangle", ShaderData "HelloTriangle" "HelloTriangle")] shaderPool
-  let program = Map.lookup programPool "HelloTriangel"
-  print program
-  putStrLn "Done"
- 
+  protoContext <- createContext <$> makeProgramPool [("HelloTriangle", ShaderData "HelloTriangle" "HelloTriangle")] shaderPool
+  let program = fromJust $ findProgram protoContext "HelloTriangle"
+      sphereShape = equilategralPolygon 50
+  sphereObjectTemplate <- toObject program (vertices sphereShape) (indices sphereShape)
+  let templateContext = addObjectTemplate protoContext "Circle" sphereObjectTemplate
+      sphereTemplate = fromJust $ getObjectTemplate templateContext "Circle"
+      (objectID, drawContext) = addObject templateContext sphereTemplate{ baseColor = GL.Color4 0 1 0 1}
+  let loop context = do
+        GLFW.pollEvents
+        
+        GL.clearColor $= GL.Color4 0 0 0 0
+        GL.clear [ GL.ColorBuffer ]
+
+        drawAll context
+        
+        GLFW.swapBuffers window
+        let tick = flip increaseTime  0.01
+        loop $ (tick $ alterObject context objectID (\ obj -> obj{ position = GL.Vector2 (sin (time context)) 0} )) 
+      
+  loop drawContext
+  putStrLn "Done" 
+
+  
  
 
 {- Initates GLFW -}
@@ -35,6 +60,6 @@ initGLFW (windowWidth, windowHeight) = do
   when (isNothing window) (putStrLn "Couldn't create window")
   
   GLFW.makeContextCurrent window
-
-  GL.depthFunc $= Just GL.Lequal
+  GL.frontFace $=! GL.CW
+  --GL.depthFunc $=! Just GL.Gequal
   return window
