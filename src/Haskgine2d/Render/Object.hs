@@ -17,6 +17,8 @@ import Data.Array.Storable
 type Position = Vector2 Float
 type Color = Color4 Float
 
+
+
 {- |
 The object that is used for rendering 
 -}
@@ -26,27 +28,28 @@ data Object = Object {
   position  :: Position,
   rotation  :: Float,
   baseColor :: Color,
-
- 
+  scale     :: GL.Vector2 Float,
   
   vbo       :: GL.VertexArrayObject,
   vao       :: GL.BufferObject,
   ibo       :: GL.BufferObject,
   numIndices :: GL.NumArrayIndices
-  }
-              
+               
+  } deriving (Show, Eq)
 
-toObject :: GLProgram -> [Float] -> [Int] -> IO Object
+
+toObject :: GLProgram -> [Float] -> [GL.GLushort] -> IO Object
 toObject program vertices indices = do
   
   vertexArr <- newListArray (0, length vertices - 1) vertices
   indexArr <- newListArray (0, length indices - 1) indices
 
-  vertexArrayObject <- GL.genObjectName
+  vertexArrayObject <- GL.genObjectName  
+  GL.bindVertexArrayObject $=! Just vertexArrayObject
+
   vertexBufferObject <- GL.genObjectName
   indexBufferObject <- GL.genObjectName
   
-  GL.bindVertexArrayObject $=! Just vertexArrayObject
   GL.bindBuffer GL.ArrayBuffer $=! Just vertexBufferObject
   withStorableArray vertexArr (\ptr ->
                                 GL.bufferData GL.ArrayBuffer $=! (verticesSize, ptr, GL.StaticDraw)
@@ -56,31 +59,41 @@ toObject program vertices indices = do
   withStorableArray indexArr (\ptr ->
                                GL.bufferData GL.ElementArrayBuffer $=! (indicesSize, ptr, GL.StaticDraw)
                                )
-  return $ Object program (Vector2 0 0) 0 (Color4 0 0 0 1) vertexArrayObject vertexBufferObject indexBufferObject (fromIntegral $ length indices)
+  return $ Object program (Vector2 0 0) 0 (Color4 0 0 0 1) (Vector2 1 1) vertexArrayObject vertexBufferObject indexBufferObject (fromIntegral $ length indices)
                                                                                
   where
     indicesSize  = fromIntegral $ (length indices) * sizeOf (undefined :: GL.GLushort)
     verticesSize = fromIntegral $ (length vertices) * sizeOf (undefined :: GL.GLfloat)
- 
-drawObject :: Object -> IO ()
-drawObject obj = do
-  GL.currentProgram $=! pure (Shaders.glProgram gl)
-  GL.bindBuffer GL.ArrayBuffer $=! pure (vao obj)
-  GL.bindBuffer GL.ElementArrayBuffer $=! pure (ibo obj)
+
+
+initObjectDraw :: Object -> IO ()
+initObjectDraw obj = do
+  GL.currentProgram $=! pure (Shaders.glProgram $ program obj)
+  GL.bindVertexArrayObject $=! Just (vbo obj)
   GL.vertexAttribArray (GL.AttribLocation 0) $=! GL.Enabled
 
-  Shaders.setTime gl 0
-  Shaders.setCameraPosition gl $ GL.Vector2 0 0
-  Shaders.setCameraRotation gl 0
+setContextUniforms :: Float -> GL.Vector2 Float -> Float -> Object -> IO ()
+setContextUniforms time position rotation obj = do
+  Shaders.setTime gl time 
+  Shaders.setCameraPosition gl position
+  Shaders.setCameraRotation gl rotation
   Shaders.setCameraViewMatrics gl $ GL.Vector2 1920 1080
+  where
+    gl = program obj  
+
+
+{- |
+ This drawing command should only be run when the object has been initiated
+-}
+drawObject :: Object -> IO ()
+drawObject obj = do
   Shaders.setObjectPositon gl $ position obj
   Shaders.setObjectRotation gl $ rotation obj
-  Shaders.setObjectBaseColor gl $ GL.Color4 1 1 1 1
-
+  Shaders.setObjectBaseColor gl $ baseColor obj
+  Shaders.setObjectScale gl $ scale obj
+ 
   GL.drawElements GL.Triangles (numIndices obj) GL.UnsignedShort nullPtr
-  return ()
-    
-  
+  return ()      
   where
     gl = program obj
   

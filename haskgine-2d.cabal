@@ -48,10 +48,10 @@ cabal-version:       >=1.10
 
 library
   -- Modules exported by the library.
-  exposed-modules: Haskgine2d, Haskgine2d.World.Type, Haskgine2d.World.Trans, Haskgine2d.World.Object, Haskgine2d.Render.Camera, Haskgine2d.Program, Haskgine2d.Render.Shaders, Haskgine2d.Render.Object
-  
+  exposed-modules: Haskgine2d, Haskgine2d.World.Context, Haskgine2d.World.Trans, Haskgine2d.World.Object, Haskgine2d.Render.Camera, Haskgine2d.Program, Haskgine2d.Render.Shaders, Haskgine2d.Render.Object, Haskgine2d.Render.Shapes, Haskgine2d.Render.Context, Haskgine2d.Render
+    
   -- Modules included in this library but not exported.
-  other-modules: 
+  other-modules: Haskgine2d.Render.DefaultShaders
   
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:    
