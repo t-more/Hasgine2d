@@ -15,6 +15,7 @@ module Haskgine2d.Render.Context (
   addObjectTemplate,
   addObject,
   getObject,
+  objectFromShape,
   alterObject,
   
   rotateCamera,
@@ -43,6 +44,8 @@ data Context = Context {
   cameraPosition :: Vector2 Float,
   cameraRotation :: Float
   }
+
+
                
 createContext :: Render.GLProgram -> Context
 createContext defaultProgram = Context mempty mempty defaultProgram mempty 0 (Vector2 0 0) 0
@@ -78,22 +81,27 @@ addObject context1 obj = (objID, context1{ objects = Map.insert objID obj (objec
   where
     (objID, context2) = genObjID context1
 
+objectFromShape :: Context -> Render.Shape -> (Render.Object -> Render.Object) -> IO (ObjectID, Context)
+objectFromShape context1 shape initiate = do
+  obj <- Render.toObject (defaultProgram context1) (Render.vertices shape) (Render.indices shape)
+  let (objID, context2) = addObject context1 (initiate obj)
+  return (objID, context2)
 
-
+  
 setCameraPosition :: Context -> Vector2 Float -> Context
 setCameraPosition context pos = context{ cameraPosition = pos}
 
 moveCamera :: Context -> Vector2 Float -> Context
 moveCamera context (Vector2 a b) = context{ cameraPosition = Vector2 (x + a) (y + b)}
   where
-    Vector2 x y = cameraPosition context
-                                    
+    Vector2 x y = cameraPosition context                                    
     
 rotateCamera :: Context -> Float -> Context
 rotateCamera context rads = context{ cameraRotation = cameraRotation context + rads}
 
 setCameraRotation :: Context -> Float -> Context
 setCameraRotation context rads = context{ cameraRotation = rads}
+
 
 
 
